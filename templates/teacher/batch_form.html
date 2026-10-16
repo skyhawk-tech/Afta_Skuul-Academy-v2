@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Batch{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus-circle{% endif %} me-2"></i>
+                    {% if form.instance.pk %}Edit{% else %}Create{% endif %} Batch
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">Batch Name*</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">e.g., "Math G4 - Mon/Wed"</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.subject.id_for_label }}" class="form-label fw-semibold">Subject*</label>
+                            {{ form.subject }}
+                            {% if form.subject.errors %}
+                                <div class="invalid-feedback d-block">{{ form.subject.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.grade_level.id_for_label }}" class="form-label fw-semibold">Grade Level*</label>
+                            {{ form.grade_level }}
+                            {% if form.grade_level.errors %}
+                                <div class="invalid-feedback d-block">{{ form.grade_level.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.max_capacity.id_for_label }}" class="form-label fw-semibold">Max Capacity</label>
+                            {{ form.max_capacity }}
+                            {% if form.max_capacity.errors %}
+                                <div class="invalid-feedback d-block">{{ form.max_capacity.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">Leave blank for unlimited.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.fee_per_session.id_for_label }}" class="form-label fw-semibold">Fee per Session (KSh)</label>
+                            {{ form.fee_per_session }}
+                            {% if form.fee_per_session.errors %}
+                                <div class="invalid-feedback d-block">{{ form.fee_per_session.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.schedule.id_for_label }}" class="form-label fw-semibold">Schedule</label>
+                        {{ form.schedule }}
+                        {% if form.schedule.errors %}
+                            <div class="invalid-feedback d-block">{{ form.schedule.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">e.g., "Mon/Wed 4:00-5:30 PM"</div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'analytics:teacher_analytics' %}" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> {% if form.instance.pk %}Update{% else %}Create{% endif %} Batch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

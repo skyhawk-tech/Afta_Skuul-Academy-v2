@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Enroll Student{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4>Enroll Student</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-success">Enroll</button>
+                </form>
+                <p>Don't see the student? <a href="{% url 'batches:create_and_enroll' batch.id %}">Create new student</a></p>
+<p>For multiple students, use <a href="">Bulk Upload</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

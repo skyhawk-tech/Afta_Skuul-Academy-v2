@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Submit: {{ assignment.title }}{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'batches:student_batch_list' %}">My Learning</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'batches:student_batch_detail' assignment.batch.id %}">{{ assignment.batch.name }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'assignments:student_batch_assignments' assignment.batch.id %}">Assignments</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'assignments:assignment_detail' assignment.id %}">{{ assignment.title }}</a>
+        </li>
+        <li class="breadcrumb-item active">Submit</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+
+        <!-- Header -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-paper-plane me-2"></i>
+                    Submit: {{ assignment.title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-2">{{ assignment.description }}</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-secondary">{{ assignment.get_type_display }}</span>
+                    <span class="badge bg-info text-dark">Total Marks: {{ assignment.total_marks }}</span>
+                    <span class="badge {% if assignment.is_overdue %}bg-danger{% else %}bg-success{% endif %}">
+                        Due: {{ assignment.due_date|date:"d M Y, H:i" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submission Form -->
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <!-- Questions -->
+            {% for q in assignment.questions %}
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="mb-0">
+                                <strong>Q{{ forloop.counter }}.</strong>
+                                {{ q.question }}
+                            </h6>
+                            <span class="badge
+                                {% if q.type == 'mcq' %}bg-primary
+                                {% elif q.type == 'short' %}bg-success
+                                {% else %}bg-warning text-dark{% endif %}">
+                                {{ q.type|upper }}
+                            </span>
+                        </div>
+
+                        <!-- MCQ Options -->
+                        {% if q.type == 'mcq' %}
+                            {% if q.options %}
+                                {% for opt in q.options %}
+                                    <div class="form-check ms-3 mb-2">
+                                        <input class="form-check-input"
+                                               type="radio"
+                                               name="q_{{ q.id }}"
+                                               id="q_{{ q.id }}_{{ forloop.counter }}"
+                                               value="{{ opt }}"
+                                               {% if existing_answers and existing_answers|default_if_none:'' == opt %}checked{% endif %}>
+                                        <label class="form-check-label" for="q_{{ q.id }}_{{ forloop.counter }}">
+                                            {{ opt }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted small ms-3">No options provided.</p>
+                            {% endif %}
+                        {% endif %}
+
+                        <!-- Short answer -->
+                        {% if q.type == 'short' %}
+                            <textarea name="q_{{ q.id }}"
+                                      class="form-control mt-2"
+                                      rows="3"
+                                      placeholder="Type your answer here..."></textarea>
+                        {% endif %}
+
+                        <!-- File upload (per-question) -->
+                        {% if q.type == 'file' %}
+                            <input type="file"
+                                   name="q_{{ q.id }}_file"
+                                   class="form-control mt-2">
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info">
+                    This assignment has no questions defined. Please contact your teacher.
+                </div>
+            {% endfor %}
+
+            <!-- General file upload -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <label class="form-label fw-semibold">
+                        <i class="fas fa-paperclip me-1"></i>
+                        Upload Additional File (optional)
+                    </label>
+                    <input type="file"
+                           name="file_upload"
+                           class="form-control">
+                    <small class="text-muted">
+                        Upload a photo, PDF, or Word document with your work.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex flex-wrap gap-2 justify-content-end mb-4">
+                <a href="{% url 'assignments:assignment_detail' assignment.id %}"
+                   class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-check me-1"></i> Submit Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

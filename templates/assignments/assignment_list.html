@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Assignments - {{ batch.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-tasks text-primary me-2"></i>Assignments</h2>
+        <p class="text-muted">{{ batch.name }} – {{ batch.subject }} ({{ batch.grade_level }})</p>
+    </div>
+    <div>
+        <a href="{% url 'content:batch_lessons' batch.id %}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i> Back to Lessons
+        </a>
+        <a href="{% url 'assignments:create_assignment' batch.id %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i> New Assignment
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {% for assignment in assignments %}
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header d-flex justify-content-between align-items-center 
+                            {% if assignment.is_overdue %}bg-danger text-white{% else %}bg-primary text-white{% endif %}">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-{% if assignment.type == 'exam' %}clipboard-list{% else %}pencil-alt{% endif %} me-2"></i>
+                        {{ assignment.title }}
+                    </h5>
+                    <span class="badge bg-light text-dark">{{ assignment.get_type_display }}</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted small">{{ assignment.description|truncatewords:20 }}</p>
+                    <div class="d-flex justify-content-between text-muted small">
+                        <span><i class="fas fa-calendar-alt me-1"></i> Due: {{ assignment.due_date|date:"d M Y, H:i" }}</span>
+                        <span><i class="fas fa-star me-1"></i> {{ assignment.total_marks }} marks</span>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-users me-1"></i> {{ assignment.submissions.count }} submissions
+                        </span>
+                        {% if assignment.is_overdue %}
+                            <span class="badge bg-danger">Overdue</span>
+                        {% else %}
+                            <span class="badge bg-success">Active</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between">
+                    <div>
+                        <a href="{% url 'assignments:submission_list' assignment.id %}" class="btn btn-sm btn-info">
+                            <i class="fas fa-check-circle me-1"></i> Grade
+                        </a>
+                    </div>
+                    <div>
+                        <a href="{% url 'assignments:update_assignment' assignment.id %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'assignments:delete_assignment' assignment.id %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center py-5">
+                <i class="fas fa-inbox fa-3x d-block mb-3 text-muted"></i>
+                <h4>No Assignments Yet</h4>
+                <p class="text-muted">Create your first assignment for this batch.</p>
+                <a href="{% url 'assignments:create_assignment' batch.id %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus-circle me-1"></i> Create Assignment
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

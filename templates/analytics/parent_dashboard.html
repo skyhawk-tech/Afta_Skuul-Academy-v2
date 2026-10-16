@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Children's Progress{% endblock %}
+
+{% block content %}
+
+<!-- ==================== HEADER ==================== -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <div>
+        <h2><i class="fas fa-children text-primary me-2"></i>My Children's Progress</h2>
+        <p class="text-muted mb-0">Track your children's learning journey</p>
+    </div>
+    <div>
+        <span class="badge bg-secondary fs-6 p-2">
+            <i class="fas fa-users me-1"></i> {{ children_count|default:"0" }} Children
+        </span>
+        <span class="badge bg-info fs-6 p-2 ms-2">
+            <i class="fas fa-chalkboard me-1"></i> {{ children_enrolled_batches|default:"0" }} Batches
+        </span>
+    </div>
+</div>
+
+<!-- ==================== QUICK STATS ==================== -->
+{% if children %}
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary h-100 shadow-sm">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase small mb-0 opacity-75">Children</h6>
+                        <p class="display-6 mb-0">{{ children_count }}</p>
+                    </div>
+                    <i class="fas fa-users fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success h-100 shadow-sm">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase small mb-0 opacity-75">Enrolled Batches</h6>
+                        <p class="display-6 mb-0">{{ children_enrolled_batches|default:"0" }}</p>
+                    </div>
+                    <i class="fas fa-chalkboard fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-warning h-100 shadow-sm">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-uppercase small mb-0 opacity-75">Avg Completion</h6>
+                        <p class="display-6 mb-0">{{ avg_completion|default:"0" }}%</p>
+                    </div>
+                    <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- ==================== CHILDREN LIST ==================== -->
+{% if children %}
+    {% for child in children %}
+        <div class="card shadow-sm border-0 mb-4">
+            <!-- Child Header -->
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-circle me-2"></i>
+                    {{ child.get_full_name|default:child.username }}
+                    <small class="opacity-75 ms-2">({{ child.username }})</small>
+                </h5>
+                <span class="badge bg-light text-dark">
+                    <i class="fas fa-graduation-cap me-1"></i> Student
+                </span>
+            </div>
+
+            <div class="card-body p-0">
+                <!-- Batch Rows -->
+                {% with has_batches=False %}
+                    {% for data in child_data %}
+                        {% if data.child.id == child.id %}
+                            {% with has_batches=True %}{% endwith %}
+                            <div class="row align-items-center border-bottom py-3 px-3 hover-row g-0">
+                                <!-- Batch Info -->
+                                <div class="col-md-3">
+                                    <strong>{{ data.batch.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-book me-1"></i> {{ data.batch.subject }}
+                                        <span class="mx-1">|</span>
+                                        <i class="fas fa-layer-group me-1"></i> {{ data.batch.grade_level }}
+                                    </small>
+                                </div>
+
+                                <!-- Teacher -->
+                                <div class="col-md-3">
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-chalkboard-teacher me-1"></i>
+                                        {{ data.batch.teacher.get_full_name }}
+                                    </span>
+                                    {% if data.batch.schedule %}
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar-alt me-1"></i> {{ data.batch.schedule }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Progress Summary -->
+                                <div class="col-md-4">
+                                    {% if data.progress %}
+                                        <div class="d-flex justify-content-between small">
+                                            <span>
+                                                <i class="fas fa-check-circle text-success me-1"></i>
+                                                Completed: {{ data.progress.total_lessons_completed }}/{{ data.progress.total_lessons }}
+                                            </span>
+                                            <span class="fw-bold">
+                                                {{ data.progress.completion_percentage|floatformat:0 }}%
+                                            </span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar"
+                                                 style="width: {{ data.progress.completion_percentage|floatformat:0 }}%;"
+                                                 aria-valuenow="{{ data.progress.completion_percentage|floatformat:0 }}"
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted mt-1">
+                                            <span>
+                                                <i class="fas fa-star text-warning me-1"></i>
+                                                Avg Grade: {{ data.progress.average_grade|floatformat:1 }}
+                                            </span>
+                                            <span>
+                                                Updated: {{ data.progress.snapshot_date|date:"d M Y" }}
+                                            </span>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-2">
+                                            <i class="fas fa-hourglass-start text-muted me-1"></i>
+                                            <span class="text-muted">No progress yet</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="col-md-2 text-end">
+                                    <a href="{% url 'assignments:student_batch_assignments' data.batch.id %}"
+                                       class="btn btn-sm btn-outline-primary w-100">
+                                        <i class="fas fa-tasks me-1"></i> Assignments
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endwith %}
+
+                <!-- Check if child has any enrollments -->
+                {% if not child_data %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        This child is not enrolled in any batch.
+                    </div>
+                {% else %}
+                    <!-- Per-Batch Lesson Progress (Collapsible) -->
+                    <div class="accordion p-3" id="lessonsAccordion-{{ child.id }}">
+                        {% for data in child_data %}
+                            {% if data.child.id == child.id %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#collapse-{{ child.id }}-{{ data.batch.id }}"
+                                                aria-expanded="false">
+                                            <i class="fas fa-list me-2 text-primary"></i>
+                                            <strong>{{ data.batch.name }}</strong>
+                                            <span class="badge bg-secondary ms-2">
+                                                {{ data.completed_lessons }}/{{ data.total_lessons }} lessons
+                                            </span>
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-{{ child.id }}-{{ data.batch.id }}"
+                                         class="accordion-collapse collapse"
+                                         data-bs-parent="#lessonsAccordion-{{ child.id }}">
+                                        <div class="accordion-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-hover mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th style="width: 40px;">#</th>
+                                                            <th>Lesson</th>
+                                                            <th style="width: 220px;">Watch %</th>
+                                                            <th class="text-end" style="width: 150px;">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for lp in data.lessons %}
+                                                            <tr>
+                                                                <td>{{ forloop.counter }}</td>
+                                                                <td>
+                                                                    <strong>{{ lp.lesson.title }}</strong>
+                                                                    {% if lp.lesson.description %}
+                                                                        <br>
+                                                                        <small class="text-muted">
+                                                                            {{ lp.lesson.description|truncatewords:8 }}
+                                                                        </small>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>
+                                                                    <div class="d-flex align-items-center gap-2">
+                                                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                                                            <div class="progress-bar
+                                                                                {% if lp.is_completed %}bg-success
+                                                                                {% elif lp.watch_percentage > 0 %}bg-warning
+                                                                                {% else %}bg-secondary{% endif %}"
+                                                                                role="progressbar"
+                                                                                style="width: {{ lp.watch_percentage|floatformat:0 }}%;"
+                                                                                aria-valuenow="{{ lp.watch_percentage|floatformat:0 }}"
+                                                                                aria-valuemin="0" aria-valuemax="100">
+                                                                            </div>
+                                                                        </div>
+                                                                        <span class="small fw-bold" style="min-width: 40px;">
+                                                                            {{ lp.watch_percentage|floatformat:0 }}%
+                                                                        </span>
+                                                                    </div>
+                                                                    <small class="text-muted">
+                                                                        {{ lp.total_watch_seconds }}s watched
+                                                                    </small>
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    {% if lp.is_completed %}
+                                                                        <span class="badge bg-success">
+                                                                            <i class="fas fa-check-circle me-1"></i> Completed
+                                                                        </span>
+                                                                    {% elif lp.watch_percentage > 0 %}
+                                                                        <span class="badge bg-warning text-dark">
+                                                                            <i class="fas fa-hourglass-start me-1"></i> In Progress
+                                                                        </span>
+                                                                    {% else %}
+                                                                        <span class="badge bg-secondary">
+                                                                            Not Started
+                                                                        </span>
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        {% empty %}
+                                                            <tr>
+                                                                <td colspan="4" class="text-center py-3 text-muted">
+                                                                    No lessons available for this batch.
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+
+{% else %}
+    <!-- ==================== NO CHILDREN LINKED ==================== -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+            <div class="mb-4">
+                <div class="bg-light rounded-circle d-inline-flex p-4">
+                    <i class="fas fa-users-slash fa-4x text-muted"></i>
+                </div>
+            </div>
+            <h4 class="mb-3">No Children Linked</h4>
+            <p class="text-muted mb-4">
+                You haven't linked any student accounts to your parent profile.
+                Please contact the administrator to link your children.
+            </p>
+            <a href="{% url 'home' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Home
+            </a>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    .hover-row {
+        transition: background-color 0.2s ease;
+    }
+    .hover-row:hover {
+        background-color: #f8f9fa;
+    }
+    .progress {
+        background-color: #e9ecef;
+        border-radius: 0.25rem;
+        overflow: hidden;
+    }
+    .progress-bar {
+        transition: width 0.6s ease;
+    }
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+        color: #0d6efd;
+    }
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,0.125);
+    }
+    .accordion-button strong {
+        flex-grow: 1;
+    }
+    @media (max-width: 768px) {
+        .col-md-2.text-end {
+            text-align: left !important;
+            margin-top: 1rem;
+        }
+        .col-md-2 .btn {
+            width: 100% !important;
+        }
+    }
+</style>
+{% endblock %}

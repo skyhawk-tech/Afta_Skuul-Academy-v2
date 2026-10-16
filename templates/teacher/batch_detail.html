@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ batch.name }}{% endblock %}
+
+{% block content %}
+
+<!-- ==================== BREADCRUMB ==================== -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item">
+            <a href="{% url 'analytics:teacher_analytics' %}">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'batches:batch_list' %}">My Batches</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ batch.name }}</li>
+    </ol>
+</nav>
+
+<!-- ==================== HERO HEADER ==================== -->
+<div class="card border-0 shadow-sm mb-4 overflow-hidden" style="border-radius: 16px;">
+    <div class="card-body p-4" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #fff;">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h1 class="h3 mb-2 fw-bold">
+                    <i class="fas fa-chalkboard me-2"></i>{{ batch.name }}
+                </h1>
+                <p class="mb-1 opacity-90">
+                    <i class="fas fa-book me-2"></i>{{ batch.subject }}
+                    <span class="mx-2 opacity-50">|</span>
+                    <i class="fas fa-layer-group me-2"></i>{{ batch.grade_level }}
+                </p>
+                {% if batch.schedule %}
+                    <p class="mb-0 small opacity-90">
+                        <i class="fas fa-calendar-alt me-2"></i>{{ batch.schedule }}
+                    </p>
+                {% endif %}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'batches:enroll_student' batch.id %}"
+                   class="btn btn-light">
+                    <i class="fas fa-user-plus me-1"></i> Enroll Student
+                </a>
+                <a href="{% url 'batches:update_batch' batch.id %}"
+                   class="btn btn-outline-light">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== STATS ROW ==================== -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-tile stat-tile-primary">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-value">{{ total_students }}</div>
+            <div class="stat-label">Students</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-tile stat-tile-success">
+            <div class="stat-icon"><i class="fas fa-video"></i></div>
+            <div class="stat-value">{{ lesson_count }}</div>
+            <div class="stat-label">Lessons</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-tile stat-tile-warning">
+            <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+            <div class="stat-value">{{ assignment_count }}</div>
+            <div class="stat-label">Assignments</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-tile stat-tile-info">
+            <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
+            <div class="stat-value">
+                {% if batch.max_capacity %}
+                    {{ batch.available_slots|default:"0" }}
+                {% else %}
+                    ∞
+                {% endif %}
+            </div>
+            <div class="stat-label">Open Slots</div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== QUICK ACTION CARDS ==================== -->
+<div class="row g-3 mb-4">
+    <!-- Manage Lessons -->
+    <div class="col-md-4">
+        <div class="action-tile" onclick="window.location='{% url 'content:batch_lessons' batch.id %}'">
+            <div class="action-tile-icon icon-primary">
+                <i class="fas fa-video"></i>
+            </div>
+            <div class="action-tile-body">
+                <h6 class="action-tile-title">Lessons</h6>
+                <p class="action-tile-desc">Upload, edit and track lesson progress</p>
+            </div>
+            <i class="fas fa-chevron-right action-tile-arrow"></i>
+        </div>
+    </div>
+
+    <!-- Manage Assignments -->
+    <div class="col-md-4">
+        <div class="action-tile" onclick="window.location='{% url 'assignments:batch_assignments' batch.id %}'">
+            <div class="action-tile-icon icon-warning">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="action-tile-body">
+                <h6 class="action-tile-title">Assignments</h6>
+                <p class="action-tile-desc">Create exercises, exams &amp; grade work</p>
+            </div>
+            <i class="fas fa-chevron-right action-tile-arrow"></i>
+        </div>
+    </div>
+
+    <!-- Enroll Student -->
+    <div class="col-md-4">
+        <div class="action-tile" onclick="window.location='{% url 'batches:enroll_student' batch.id %}'">
+            <div class="action-tile-icon icon-success">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <div class="action-tile-body">
+                <h6 class="action-tile-title">Enroll Student</h6>
+                <p class="action-tile-desc">Add new or existing students</p>
+            </div>
+            <i class="fas fa-chevron-right action-tile-arrow"></i>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ENROLLED STUDENTS ==================== -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3" style="border-bottom: 1px solid #e2e8f0;">
+        <div>
+            <h5 class="mb-0 fw-bold">
+                <i class="fas fa-users text-primary me-2"></i>Enrolled Students
+            </h5>
+            <small class="text-muted">Students currently in this batch</small>
+        </div>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+            {{ total_students }} enrolled
+        </span>
+    </div>
+
+    <div class="card-body p-0">
+        {% if enrollments %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>Student</th>
+                            <th class="d-none d-md-table-cell">Email</th>
+                            <th class="d-none d-lg-table-cell">Enrolled</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enrollment in enrollments %}
+                            <tr>
+                                <td class="text-muted">{{ forloop.counter }}</td>
+
+                                <!-- Student with avatar -->
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="student-avatar">
+                                            {{ enrollment.student.first_name|first|upper }}{{ enrollment.student.last_name|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">
+                                                {{ enrollment.student.get_full_name|default:enrollment.student.username }}
+                                            </div>
+                                            <small class="text-muted d-md-none">
+                                                {{ enrollment.student.email }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Email -->
+                                <td class="d-none d-md-table-cell">
+                                    <small class="text-muted">
+                                        <i class="far fa-envelope me-1"></i>
+                                        {{ enrollment.student.email|default:"—" }}
+                                    </small>
+                                </td>
+
+                                <!-- Enrolled date -->
+                                <td class="d-none d-lg-table-cell">
+                                    <small class="text-muted">
+                                        <i class="far fa-calendar me-1"></i>
+                                        {{ enrollment.enrolled_on|date:"d M Y" }}
+                                    </small>
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="text-end">
+                                    <form method="post"
+                                          action="{% url 'batches:unenroll_student' batch.id enrollment.student.id %}"
+                                          style="display: inline;"
+                                          onsubmit="return confirm('Remove {{ enrollment.student.get_full_name }} from this batch?');">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                                title="Remove student">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <!-- Empty state -->
+            <div class="text-center py-5">
+                <div class="empty-icon-sm">
+                    <i class="fas fa-users-slash"></i>
+                </div>
+                <h5 class="mt-3">No Students Enrolled</h5>
+                <p class="text-muted mb-3">
+                    Start by enrolling your first student into this batch.
+                </p>
+                <a href="{% url 'batches:enroll_student' batch.id %}" class="btn btn-success">
+                    <i class="fas fa-user-plus me-1"></i> Enroll First Student
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ==================== STYLES ==================== -->
+<style>
+    /* ---------- Stat tiles ---------- */
+    .stat-tile {
+        background: #fff;
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        border-left: 4px solid;
+        transition: transform .2s, box-shadow .2s;
+        height: 100%;
+    }
+    .stat-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    }
+    .stat-tile-primary { border-left-color: #4f46e5; }
+    .stat-tile-success { border-left-color: #10b981; }
+    .stat-tile-warning { border-left-color: #f59e0b; }
+    .stat-tile-info    { border-left-color: #0ea5e9; }
+
+    .stat-icon { font-size: 1.1rem; margin-bottom: 0.35rem; opacity: .85; }
+    .stat-tile-primary .stat-icon { color: #4f46e5; }
+    .stat-tile-success .stat-icon { color: #10b981; }
+    .stat-tile-warning .stat-icon { color: #f59e0b; }
+    .stat-tile-info    .stat-icon { color: #0ea5e9; }
+
+    .stat-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: #0f172a;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    /* ---------- Action tiles ---------- */
+    .action-tile {
+        background: #fff;
+        border-radius: 14px;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        border: 1px solid #f1f5f9;
+        transition: transform .2s, box-shadow .2s, border-color .2s;
+        cursor: pointer;
+        height: 100%;
+    }
+    .action-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        border-color: #e2e8f0;
+    }
+    .action-tile-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+    .icon-primary { background: #eef2ff; color: #4f46e5; }
+    .icon-warning { background: #fffbeb; color: #f59e0b; }
+    .icon-success { background: #ecfdf5; color: #10b981; }
+
+    .action-tile-body { flex-grow: 1; min-width: 0; }
+    .action-tile-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 0.1rem;
+        color: #0f172a;
+    }
+    .action-tile-desc {
+        font-size: 0.78rem;
+        color: #64748b;
+        margin-bottom: 0;
+        line-height: 1.35;
+    }
+    .action-tile-arrow {
+        color: #cbd5e1;
+        font-size: 0.85rem;
+        transition: transform .15s, color .15s;
+    }
+    .action-tile:hover .action-tile-arrow {
+        color: #4f46e5;
+        transform: translateX(3px);
+    }
+
+    /* ---------- Student avatar ---------- */
+    .student-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.78rem;
+        flex-shrink: 0;
+    }
+
+    /* ---------- Empty state icon ---------- */
+    .empty-icon-sm {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #6366f1;
+        font-size: 2rem;
+    }
+</style>
+
+{% endblock %}

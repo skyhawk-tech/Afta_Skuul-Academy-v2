@@ -1,0 +1,63 @@
+{% load static %}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <i class="fas fa-chart-line me-2"></i> {{ chart_title|default:"Progress Overview" }}
+    </div>
+    <div class="card-body">
+        <canvas id="progressChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('progressChart').getContext('2d');
+
+    // Context data passed from the view
+    const chartData = {{ chart_data|default:"{}"|safe }};
+
+    const defaults = {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            label: 'Attendance (%)',
+            data: [65, 70, 80, 75, 90, 85, 95],
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            tension: 0.3,
+            fill: true
+        }]
+    };
+
+    const config = {
+        type: 'line',
+        data: chartData.datasets ? chartData : defaults,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: chartData.title || 'Weekly Progress'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    new Chart(ctx, config);
+});
+</script>

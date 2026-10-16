@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}My Batches{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-chalkboard-teacher text-primary me-2"></i>My Batches</h2>
+        <p class="text-muted">Manage your tuition batches</p>
+    </div>
+    <div>
+        <a href="{% url 'batches:create_batch' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i> New Batch
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {% for batch in batches %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ batch.name }}</h5>
+                    <span class="badge bg-light text-dark">{{ batch.grade_level }}</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <i class="fas fa-book me-2"></i> {{ batch.subject }}
+                    </p>
+                    <p class="card-text text-muted small">
+                        <i class="fas fa-users me-2"></i> {{ batch.enrollments.count }} students
+                        {% if batch.max_capacity %}
+                            / {{ batch.max_capacity }}
+                        {% endif %}
+                    </p>
+                    <p class="card-text text-muted small">
+                        <i class="fas fa-calendar-alt me-2"></i> {{ batch.schedule|default:"No schedule set" }}
+                    </p>
+                    <p class="card-text text-muted small">
+                        <i class="fas fa-dollar-sign me-2"></i> {{ batch.fee_per_session|default:"0" }} per session
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between">
+                    <a href="{% url 'batches:batch_detail' batch.id %}" class="btn btn-sm btn-info">
+                        <i class="fas fa-eye me-1"></i> View
+                    </a>
+                    <div>
+                        <a href="{% url 'batches:update_batch' batch.id %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'batches:delete_batch' batch.id %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center py-5">
+                <i class="fas fa-inbox fa-3x d-block mb-3 text-muted"></i>
+                <h4>No Batches Yet</h4>
+                <p class="text-muted">Create your first batch to start teaching.</p>
+                <a href="{% url 'batches:create_batch' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus-circle me-1"></i> Create Batch
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Learning{% endblock %}
+
+{% block content %}
+
+<!-- ==================== HERO HEADER ==================== -->
+<div class="card border-0 shadow-sm mb-4 overflow-hidden" style="border-radius: 16px;">
+    <div class="card-body p-4" style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff;">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <h1 class="h3 mb-2 fw-bold">
+                    <i class="fas fa-book-open me-2"></i>My Learning
+                </h1>
+                <p class="mb-0 opacity-90">
+                    Your enrolled batches and progress overview
+                </p>
+            </div>
+            <div class="text-end">
+                <div class="display-4 fw-bold mb-0">{{ enrollments|length }}</div>
+                <div class="small opacity-90">
+                    Active Batch{{ enrollments|length|pluralize:"es" }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== QUICK SUMMARY TILES ==================== -->
+{% if enrollments %}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-tile stat-tile-primary">
+            <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
+            <div class="stat-value">{{ enrollments|length }}</div>
+            <div class="stat-label">Batches</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-tile stat-tile-success">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-value">{{ total_completed_lessons|default:"0" }}</div>
+            <div class="stat-label">Lessons Done</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-tile stat-tile-warning">
+            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-value">{{ overall_progress|default:"0" }}%</div>
+            <div class="stat-label">Avg Progress</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-tile stat-tile-info">
+            <div class="stat-icon"><i class="fas fa-chalkboard-user"></i></div>
+            <div class="stat-value">{{ teachers_count|default:"0" }}</div>
+            <div class="stat-label">Teachers</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ==================== BATCH CARDS GRID ==================== -->
+<div class="row g-4">
+    {% for item in enrollments %}
+        <div class="col-md-6 col-lg-4">
+            {% include "student/partials/_batch_card.html" with item=item %}
+        </div>
+    {% empty %}
+        <!-- ==================== EMPTY STATE ==================== -->
+        <div class="col-12">
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <h4>No Enrollments Yet</h4>
+                <p class="text-muted mb-4">
+                    You aren't enrolled in any batch yet.<br>
+                    Contact your teacher to be added to a class.
+                </p>
+                <a href="{% url 'batches:student_batch_list' %}" class="btn btn-primary">
+                    <i class="fas fa-redo me-1"></i> Refresh
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- ==================== STYLES ==================== -->
+<style>
+    /* ---------- Stat tiles ---------- */
+    .stat-tile {
+        background: #fff;
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        border-left: 4px solid;
+        transition: transform .2s, box-shadow .2s;
+        height: 100%;
+    }
+    .stat-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    }
+    .stat-tile-primary { border-left-color: #0ea5e9; }
+    .stat-tile-success { border-left-color: #10b981; }
+    .stat-tile-warning { border-left-color: #f59e0b; }
+    .stat-tile-info    { border-left-color: #6366f1; }
+
+    .stat-icon { font-size: 1.1rem; margin-bottom: 0.35rem; opacity: .85; }
+    .stat-tile-primary .stat-icon { color: #0ea5e9; }
+    .stat-tile-success .stat-icon { color: #10b981; }
+    .stat-tile-warning .stat-icon { color: #f59e0b; }
+    .stat-tile-info    .stat-icon { color: #6366f1; }
+
+    .stat-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: #0f172a;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    /* ---------- Empty state ---------- */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 1.5rem;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+    }
+    .empty-icon {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.25rem;
+    }
+    .empty-icon i {
+        font-size: 2.5rem;
+        color: #0284c7;
+    }
+</style>
+
+{% endblock %}

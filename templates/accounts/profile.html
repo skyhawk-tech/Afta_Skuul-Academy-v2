@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - Afta_Skuul Academy{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold text-dark mb-1">My Profile</h2>
+            <p class="text-muted">Manage your account settings and personal information.</p>
+        </div>
+    </div>
+
+    <!-- Django Messages (Success/Error) -->
+    {% if messages %}
+        <div class="row mb-4">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        
+        <!-- LEFT COLUMN: Profile Overview Card -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body text-center py-5">
+                    <!-- Avatar Placeholder (Replace with {{ user.profile_picture.url }} if you have file uploads) -->
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px;">
+                        <span class="display-4 fw-bold">{{ user.first_name|first|default:user.username|first|upper }}</span>
+                    </div>
+                    
+                    <h4 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted mb-2">@{{ user.username }}</p>
+                    
+                    <!-- Role Badge -->
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2 rounded-pill text-uppercase">
+                        {{ user.get_role_display|default:user.role }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Quick Links Card -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+                    <h6 class="fw-bold text-uppercase text-muted small mb-0">Account Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <!-- IMPORTANT: Change these URLs to match your accounts/urls.py -->
+                        <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action border-0 px-0">
+                            <i class="bi bi-shield-lock me-2 text-primary"></i> Change Password
+                        </a>
+                        <a href="{% url 'accounts:logout' %}" class="list-group-item list-group-item-action border-0 px-0 text-danger">
+                            <i class="bi bi-box-arrow-right me-2"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Edit Profile Form -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="fw-bold mb-0">Personal Information</h5>
+                    <p class="text-muted small mb-0">Update your account details below.</p>
+                </div>
+                <div class="card-body pt-4">
+                    
+                    <!-- Profile Update Form -->
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row g-3">
+                            <!-- First Name -->
+                            <div class="col-md-6">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">First Name</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="col-md-6">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">Last Name</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">Email Address</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small mt-1">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="col-md-6">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label fw-semibold">Phone Number</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                    <div class="text-danger small mt-1">{{ form.phone.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Role-Specific Fields -->
+                            
+                            <!-- Teacher: TSC Number -->
+                            {% if user.role == 'teacher' and form.tsc_number %}
+                            <div class="col-md-6">
+                                <label for="{{ form.tsc_number.id_for_label }}" class="form-label fw-semibold">TSC Number</label>
+                                {{ form.tsc_number }}
+                                {% if form.tsc_number.errors %}
+                                    <div class="text-danger small mt-1">{{ form.tsc_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            <!-- Student: Subjects / Parents -->
+                            {% if user.role == 'student' %}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Enrolled Batches</label>
+                                    <div class="form-control bg-light">
+                                        {{ user.enrollments.count }} Active Batch{{ user.enrollments.count|pluralize }}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {% if user.role == 'parent' %}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Linked Children</label>
+                                    <div class="form-control bg-light">
+                                        {% for child in user.children.all %}
+                                            {{ child.get_full_name }}{% if not forloop.last %}, {% endif %}
+                                        {% empty %}
+                                            No children linked.
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                            <a href="{% url 'accounts:profile' %}" class="btn btn-light me-2 fw-bold">Cancel</a>
+                            <button type="submit" class="btn btn-primary fw-bold">
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

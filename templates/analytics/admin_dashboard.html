@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ==================== HEADER ==================== -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <div>
+        <h2><i class="fas fa-tachometer-alt text-primary me-2"></i>Admin Dashboard</h2>
+        <p class="text-muted mb-0">Overview of your tuition platform</p>
+    </div>
+    <div>
+        <span class="badge bg-secondary fs-6 p-2">
+            <i class="fas fa-calendar-alt me-1"></i> Live Dashboard
+        </span>
+        <a href="{% url 'admin:index' %}" class="btn btn-outline-primary ms-2">
+            <i class="fas fa-cog me-1"></i> Admin Panel
+        </a>
+    </div>
+</div>
+
+<!-- ==================== STATS CARDS ==================== -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-primary h-100 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title text-uppercase small mb-0 opacity-75">Teachers</h6>
+                    <p class="display-6 mb-0">{{ total_teachers }}</p>
+                </div>
+                <i class="fas fa-chalkboard-teacher fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-success h-100 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title text-uppercase small mb-0 opacity-75">Students</h6>
+                    <p class="display-6 mb-0">{{ total_students }}</p>
+                </div>
+                <i class="fas fa-user-graduate fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-warning h-100 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title text-uppercase small mb-0 opacity-75">Batches</h6>
+                    <p class="display-6 mb-0">{{ total_batches }}</p>
+                </div>
+                <i class="fas fa-layer-group fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-info h-100 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title text-uppercase small mb-0 opacity-75">Avg Attendance</h6>
+                    <p class="display-6 mb-0">{{ avg_attendance }}%</p>
+                </div>
+                <i class="fas fa-calendar-check fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== LIVE CLASSES NOW ==================== -->
+{% if live_now_classes %}
+<div class="card shadow-sm border-0 mb-4 border-start border-4 border-danger">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <span class="spinner-grow spinner-grow-sm me-2" role="status"></span>
+            Live Classes Happening Now
+        </h5>
+        <span class="badge bg-light text-dark">{{ live_now_classes|length }} active</span>
+    </div>
+    <div class="list-group list-group-flush">
+        {% for item in live_now_classes %}
+            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong><i class="fas fa-broadcast-tower text-danger me-2"></i>{{ item.lesson.title }}</strong>
+                    <br>
+                    <small class="text-muted">
+                        <i class="fas fa-layer-group me-1"></i>{{ item.batch.name }}
+                        <span class="mx-2">·</span>
+                        <i class="fas fa-chalkboard-teacher me-1"></i>{{ item.teacher.get_full_name }}
+                        {% if item.teacher.tsc_number %}
+                            <span class="badge bg-light text-dark border ms-1">
+                                <i class="fas fa-id-card me-1"></i>TSC: {{ item.teacher.tsc_number }}
+                            </span>
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="text-end">
+                    <div class="mb-1">
+                        <span class="badge bg-danger">
+                            <i class="fas fa-users me-1"></i>
+                            {{ item.attended }}/{{ item.enrolled }} students
+                        </span>
+                        <span class="badge bg-secondary">{{ item.rate }}%</span>
+                    </div>
+                    <a href="{% url 'content:lesson_attendance' item.lesson.id %}"
+                       class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-chart-bar me-1"></i> View Attendance
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ==================== RECENT LIVE CLASSES (ADMIN) ==================== -->
+{% if live_attendance %}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-broadcast-tower me-2"></i>Recent Live Classes
+        </h5>
+        <span class="badge bg-light text-dark">
+            {{ live_attendance|length }} classes
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Lesson</th>
+                        <th>Batch</th>
+                        <th>Teacher</th>
+                        <th>Date</th>
+                        <th class="text-center">Attended</th>
+                        <th class="text-center">Enrolled</th>
+                        <th style="min-width: 160px;">Rate</th>
+                        <th class="text-end">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in live_attendance %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.lesson.title }}</strong>
+                                {% if not item.has_ended %}
+                                    <span class="badge bg-warning text-dark ms-1">Live</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.lesson.batch.name }}</td>
+                            <td>
+                                {{ item.teacher.get_full_name|default:item.teacher.username }}
+                                {% if item.teacher.tsc_number %}
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-id-card me-1"></i>TSC: {{ item.teacher.tsc_number }}
+                                    </small>
+                                {% else %}
+                                    <br>
+                                    <small class="badge bg-warning text-dark">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>No TSC
+                                    </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.lesson.live_start %}
+                                    <small>{{ item.lesson.live_start|date:"d M, H:i" }}</small>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-danger">{{ item.attended }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ item.enrolled }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar
+                                            {% if item.rate >= 80 %}bg-success
+                                            {% elif item.rate >= 50 %}bg-warning
+                                            {% else %}bg-danger{% endif %}"
+                                            role="progressbar"
+                                            style="width: {{ item.rate }}%;"
+                                            aria-valuenow="{{ item.rate }}"
+                                            aria-valuemin="0"
+                                            aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <span class="small fw-bold" style="min-width: 45px;">
+                                        {{ item.rate }}%
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'content:lesson_attendance' item.lesson.id %}"
+                                   class="btn btn-sm btn-outline-info"
+                                   title="View Attendance Details">
+                                    <i class="fas fa-chart-bar"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ==================== UPCOMING LIVE CLASSES ==================== -->
+{% if upcoming_live_classes %}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Upcoming Live Classes</h5>
+        <span class="badge bg-light text-dark">{{ upcoming_live_classes|length }} scheduled</span>
+    </div>
+    <div class="list-group list-group-flush">
+        {% for item in upcoming_live_classes %}
+            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong><i class="fas fa-clock text-info me-2"></i>{{ item.lesson.title }}</strong>
+                    <br>
+                    <small class="text-muted">
+                        <i class="fas fa-layer-group me-1"></i>{{ item.batch.name }}
+                        <span class="mx-2">·</span>
+                        <i class="fas fa-chalkboard-teacher me-1"></i>{{ item.teacher.get_full_name }}
+                        {% if item.teacher.tsc_number %}
+                            <span class="badge bg-light text-dark border ms-1">
+                                <i class="fas fa-id-card me-1"></i>TSC: {{ item.teacher.tsc_number }}
+                            </span>
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-info text-white">
+                        <i class="fas fa-hourglass-half me-1"></i>
+                        In {{ item.starts_in }} min
+                    </span>
+                    <br>
+                    <small class="text-muted">{{ item.lesson.live_start|date:"d M Y, H:i" }}</small>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ==================== ATTENDANCE CHART ==================== -->
+<div class="row mb-4">
+    <div class="col-12">
+        {% include "analytics/partials/attendance_chart.html" with chart_data=chart_data chart_title="Weekly Attendance" %}
+    </div>
+</div>
+
+<!-- ==================== DAILY ATTENDANCE RECORD ==================== -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Daily Attendance Record</h5>
+        <span class="badge bg-light text-dark">
+            {{ selected_date|date:"d M Y" }}
+        </span>
+    </div>
+    <div class="card-body">
+        <!-- Filter Form -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label for="date" class="form-label">Date</label>
+                <input type="date" name="date" id="date" class="form-control"
+                       value="{{ selected_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="batch" class="form-label">Batch</label>
+                <select name="batch" id="batch" class="form-select">
+                    <option value="">All Batches</option>
+                    {% for batch in all_batches %}
+                        <option value="{{ batch.id }}" {% if selected_batch == batch.id|stringformat:"s" %}selected{% endif %}>
+                            {{ batch.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+            </div>
+        </form>
+
+        <!-- Summary Stats -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card bg-light border-0">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Students Today</h6>
+                        <p class="display-6 mb-0">{{ total_students_today }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light border-0">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Completed Lessons</h6>
+                        <p class="display-6 mb-0">{{ total_completed }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light border-0">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Attendance Rate</h6>
+                        <p class="display-6 mb-0">{{ attendance_rate }}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Table -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Batch</th>
+                        <th>Student</th>
+                        <th>Lesson</th>
+                        <th class="text-center">Type</th>
+                        <th>Watch %</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance_records %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ record.date|date:"d M Y" }}</td>
+                            <td>
+                                <strong>{{ record.batch.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ record.batch.subject }}</small>
+                            </td>
+                            <td>{{ record.student.get_full_name }}</td>
+                            <td>{{ record.lesson.title }}</td>
+                            <td class="text-center">
+                                {% if record.lesson.lesson_type == 'live' %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-broadcast-tower me-1"></i> Live
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-play-circle me-1"></i> Recorded
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar {% if record.is_completed %}bg-success{% else %}bg-warning{% endif %}"
+                                             role="progressbar"
+                                             style="width: {{ record.watch_percentage|floatformat:0 }}%;"
+                                             aria-valuenow="{{ record.watch_percentage|floatformat:0 }}"
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <span class="small fw-bold">{{ record.watch_percentage|floatformat:0 }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if record.is_completed %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i> Completed
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-hourglass-start me-1"></i> In Progress
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <i class="fas fa-inbox fa-2x d-block text-muted mb-2"></i>
+                                <p class="text-muted mb-0">No attendance records found for this date.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TOP BATCHES & RECENT LESSONS ==================== -->
+<div class="row g-4 mb-4">
+    <!-- Top 5 Batches -->
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top 5 Batches</h5>
+                <span class="badge bg-light text-dark">By Attendance</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Batch</th>
+                                <th>Attendance</th>
+                                <th class="text-end">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in top_batches %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td><strong>{{ b.batch_name }}</strong></td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div class="progress-bar
+                                                    {% if b.avg_attendance >= 80 %}bg-success
+                                                    {% elif b.avg_attendance >= 50 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}"
+                                                    role="progressbar"
+                                                    style="width: {{ b.avg_attendance }}%;">
+                                                </div>
+                                            </div>
+                                            <span class="small fw-bold">{{ b.avg_attendance|floatformat:0 }}%</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge
+                                            {% if b.avg_attendance >= 80 %}bg-success
+                                            {% elif b.avg_attendance >= 50 %}bg-warning text-dark
+                                            {% else %}bg-danger{% endif %}">
+                                            {% if b.avg_attendance >= 80 %}Excellent
+                                            {% elif b.avg_attendance >= 50 %}Good
+                                            {% else %}Needs Improvement{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <p class="text-muted mb-0">No attendance data available.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Lessons -->
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Recorded Lessons</h5>
+                <span class="badge bg-light text-dark">Last 30 Days</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Lesson</th>
+                                <th>Batch</th>
+                                <th>Teacher</th>
+                                <th class="text-end">Attendance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for l in recent_lessons %}
+                                <tr>
+                                    <td><strong>{{ l.title }}</strong></td>
+                                    <td>{{ l.batch }}</td>
+                                    <td>{{ l.teacher }}</td>
+                                    <td class="text-end">
+                                        <span class="badge
+                                            {% if l.attendance_rate >= 80 %}bg-success
+                                            {% elif l.attendance_rate >= 50 %}bg-warning text-dark
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ l.attendance_rate }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <p class="text-muted mb-0">No recent lessons.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== QUICK ACTIONS ==================== -->
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="mb-3"><i class="fas fa-bolt text-warning me-2"></i>Quick Actions</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'admin:accounts_user_changelist' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-users me-1"></i> Manage Users
+                    </a>
+                    <a href="{% url 'admin:batches_batch_changelist' %}" class="btn btn-outline-success">
+                        <i class="fas fa-layer-group me-1"></i> Manage Batches
+                    </a>
+                    <a href="{% url 'admin:content_lesson_changelist' %}" class="btn btn-outline-info">
+                        <i class="fas fa-video me-1"></i> Manage Lessons
+                    </a>
+                    <a href="{% url 'admin:assignments_assignment_changelist' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-tasks me-1"></i> Manage Assignments
+                    </a>
+                    <a href="{% url 'admin:analytics_dailyattendancesnapshot_changelist' %}" class="btn btn-outline-warning">
+                        <i class="fas fa-chart-bar me-1"></i> View Attendance Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

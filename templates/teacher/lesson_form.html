@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% load common_filters %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Upload{% endif %} Lesson{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-{% if form.instance.pk %}edit{% else %}upload{% endif %} me-2"></i>
+                    {% if form.instance.pk %}Edit{% else %}Upload{% endif %} Lesson
+                </h4>
+                <span class="badge bg-light text-dark">
+                    {% if form.instance.pk %}Update{% else %}New{% endif %}
+                </span>
+            </div>
+
+            <div class="card-body">
+
+                <!-- Existing file info (edit mode) -->
+                {% if form.instance.pk and form.instance.video_file %}
+                    <div class="alert alert-info d-flex align-items-center">
+                        <i class="fas fa-file-video me-2"></i>
+                        <div>
+                            <strong>Current video:</strong>
+                            {{ form.instance.video_file.name|cut:"videos/" }}
+                            ({{ form.instance.video_file|file_size }})
+                            <br>
+                            <small class="text-muted">
+                                <i class="far fa-clock me-1"></i>
+                                Duration: {{ form.instance.video_duration|format_duration_filter }}
+                            </small>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if form.instance.pk and form.instance.notes_file %}
+                    <div class="alert alert-secondary d-flex align-items-center">
+                        <i class="fas fa-file-pdf me-2"></i>
+                        <div>
+                            <strong>Current notes:</strong>
+                            {{ form.instance.notes_file.name|cut:"notes/" }}
+                            ({{ form.instance.notes_file|file_size }})
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Form -->
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <!-- ============ TITLE ============ -->
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label fw-semibold">
+                            Title <span class="text-danger">*</span>
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">{{ form.title.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- ============ DESCRIPTION ============ -->
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                            Description
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- ============ LESSON TYPE (decides what shows next) ============ -->
+                    <div class="mb-3">
+                        <label for="{{ form.lesson_type.id_for_label }}" class="form-label fw-semibold">
+                            Lesson Type <span class="text-danger">*</span>
+                        </label>
+                        {{ form.lesson_type }}
+                        {% if form.lesson_type.errors %}
+                            <div class="invalid-feedback d-block">{{ form.lesson_type.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Choose <strong>Live Class</strong> for scheduled video calls.</div>
+                    </div>
+
+                    <!-- ============ LIVE CLASS FIELDS (hidden by default) ============ -->
+                    <div id="live-fields" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            A unique Jitsi Meet room will be auto-generated when you save.
+                            Share the schedule with students so they can join on time.
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.live_start.id_for_label }}" class="form-label fw-semibold">
+                                    Class Starts <span class="text-danger">*</span>
+                                </label>
+                                {{ form.live_start }}
+                                {% if form.live_start.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.live_start.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.live_end.id_for_label }}" class="form-label fw-semibold">
+                                    Class Ends <span class="text-danger">*</span>
+                                </label>
+                                {{ form.live_end }}
+                                {% if form.live_end.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.live_end.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============ VIDEO FIELDS (shown for recorded lessons) ============ -->
+                    <div id="video-fields">
+                        <!-- Video File & URL -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.video_file.id_for_label }}" class="form-label fw-semibold">
+                                    Video File
+                                </label>
+                                {{ form.video_file }}
+                                {% if form.video_file.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.video_file.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Upload MP4, WebM, etc. Max size: 500 MB</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.video_url.id_for_label }}" class="form-label fw-semibold">
+                                    Video URL (optional)
+                                </label>
+                                {{ form.video_url }}
+                                {% if form.video_url.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.video_url.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">External video link (Vimeo, YouTube)</div>
+                            </div>
+                        </div>
+
+                        <!-- Duration, Order, Required % -->
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.video_duration.id_for_label }}" class="form-label fw-semibold">
+                                    Duration (seconds)
+                                </label>
+                                {{ form.video_duration }}
+                                {% if form.video_duration.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.video_duration.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">e.g., 900 = 15 minutes</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.order.id_for_label }}" class="form-label fw-semibold">
+                                    Order
+                                </label>
+                                {{ form.order }}
+                                {% if form.order.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.order.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Lower = appears first</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.required_watch_percentage.id_for_label }}" class="form-label fw-semibold">
+                                    Required % to Complete
+                                </label>
+                                {{ form.required_watch_percentage }}
+                                {% if form.required_watch_percentage.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.required_watch_percentage.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Default: 80%</div>
+                            </div>
+                        </div>
+
+                        <!-- Chapter & Part (for split videos) -->
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="{{ form.chapter.id_for_label }}" class="form-label fw-semibold">
+                                    Chapter (optional)
+                                </label>
+                                {{ form.chapter }}
+                                {% if form.chapter.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.chapter.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Group split videos by chapter.</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.part_number.id_for_label }}" class="form-label fw-semibold">
+                                    Part Number
+                                </label>
+                                {{ form.part_number }}
+                                {% if form.part_number.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.part_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============ NOTES ============ -->
+                    <div class="mb-3">
+                        <label for="{{ form.notes_file.id_for_label }}" class="form-label fw-semibold">
+                            Notes (PDF/Word)
+                        </label>
+                        {{ form.notes_file }}
+                        {% if form.notes_file.errors %}
+                            <div class="invalid-feedback d-block">{{ form.notes_file.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Upload supplementary notes (optional).</div>
+                    </div>
+
+                    <!-- ============ RELEASE DATE ============ -->
+                    <div class="mb-3">
+                        <label for="{{ form.release_date.id_for_label }}" class="form-label fw-semibold">
+                            Release Date
+                        </label>
+                        {{ form.release_date }}
+                        {% if form.release_date.errors %}
+                            <div class="invalid-feedback d-block">{{ form.release_date.errors }}</div>
+                        {% endif %}
+                        <div class="form-text">Leave blank to publish immediately.</div>
+                    </div>
+
+                    <!-- ============ BUTTONS ============ -->
+                    <div class="d-flex flex-wrap gap-2 justify-content-end mt-4">
+                        <a href="{% url 'content:batch_lessons' batch.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            {% if form.instance.pk %}Update{% else %}Upload{% endif %} Lesson
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // ============ LESSON TYPE TOGGLE ============
+    const typeSelect = document.getElementById('id_lesson_type');
+    const liveFields = document.getElementById('live-fields');
+    const videoFields = document.getElementById('video-fields');
+    const liveStart = document.getElementById('id_live_start');
+    const liveEnd = document.getElementById('id_live_end');
+
+    // ---- Helper: format a Date for datetime-local input ----
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function toLocalDateTimeInput(date) {
+        return date.getFullYear() + '-' +
+               pad(date.getMonth() + 1) + '-' +
+               pad(date.getDate()) + 'T' +
+               pad(date.getHours()) + ':' +
+               pad(date.getMinutes());
+    }
+
+    // ---- Helper: round up to the next 5-minute mark ----
+    function roundUpTo5(date) {
+        const d = new Date(date);
+        const m = d.getMinutes();
+        const add = 5 - (m % 5);
+        d.setMinutes(m + add, 0, 0);
+        return d;
+    }
+
+    // ---- Auto-fill live times if empty ----
+    function prefillLiveTimes() {
+        if (liveStart && !liveStart.value) {
+            const start = roundUpTo5(new Date());
+            const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
+            liveStart.value = toLocalDateTimeInput(start);
+            liveEnd.value = toLocalDateTimeInput(end);
+        }
+    }
+
+    // ---- Toggle live vs video fields ----
+    function toggleFields() {
+        if (!typeSelect) return;
+        if (typeSelect.value === 'live') {
+            liveFields.style.display = 'block';
+            videoFields.style.display = 'none';
+            prefillLiveTimes();     // ✅ Auto-fill on switch to Live
+        } else {
+            liveFields.style.display = 'none';
+            videoFields.style.display = 'block';
+        }
+    }
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', toggleFields);
+        toggleFields();
+    }
+
+    // ============ DURATION PREVIEW ============
+    const durationInput = document.getElementById('id_video_duration');
+    if (durationInput) {
+        const helper = document.createElement('small');
+        helper.className = 'text-muted d-block mt-1';
+        helper.id = 'durationPreview';
+        durationInput.parentNode.appendChild(helper);
+
+        durationInput.addEventListener('input', function() {
+            const seconds = parseInt(this.value) || 0;
+            if (seconds > 0) {
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                const s = seconds % 60;
+                let parts = [];
+                if (h) parts.push(h + 'h');
+                if (m) parts.push(m + 'm');
+                if (s || !parts.length) parts.push(s + 's');
+                helper.textContent = 'Preview: ' + parts.join(' ');
+            } else {
+                helper.textContent = '';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

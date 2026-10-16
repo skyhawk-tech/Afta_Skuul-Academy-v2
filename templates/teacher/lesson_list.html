@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% load static %}
+{% load common_filters %}
+
+{% block title %}Lessons - {{ batch.name }}{% endblock %}
+
+{% block content %}
+
+<!-- ==================== BREADCRUMB ==================== -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'batches:batch_list' %}">Dashboard</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'batches:batch_detail' batch.id %}">{{ batch.name }}</a>
+        </li>
+        <li class="breadcrumb-item active">Lessons</li>
+    </ol>
+</nav>
+
+<!-- ==================== HEADER ==================== -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <div>
+        <h2><i class="fas fa-video text-primary me-2"></i>Lessons</h2>
+        <p class="text-muted mb-0">{{ batch.name }} – {{ batch.subject }} ({{ batch.grade_level }})</p>
+    </div>
+    <div>
+        <a href="{% url 'content:create_lesson' batch.id %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i> Upload Lesson
+        </a>
+    </div>
+</div>
+
+<!-- ==================== LESSONS GRID ==================== -->
+<div class="row g-4">
+    {% for lesson in lessons %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0">
+
+                <!-- Card Header -->
+                <div class="card-header
+                    {% if lesson.lesson_type == 'live' %}
+                        {% if lesson.is_live_now %}bg-danger text-white
+                        {% elif lesson.has_ended %}bg-dark text-white
+                        {% else %}bg-info text-white{% endif %}
+                    {% else %}
+                        {% if lesson.is_released %}bg-success text-white{% else %}bg-secondary text-white{% endif %}
+                    {% endif %}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-truncate" title="{{ lesson.title }}">
+                            {{ lesson.title }}
+                        </h5>
+                        <span class="badge bg-light text-dark flex-shrink-0 ms-2">
+                            #{{ lesson.order }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body">
+
+                    <!-- Lesson type badge -->
+                    <div class="mb-2">
+                        {% if lesson.lesson_type == 'live' %}
+                            {% if lesson.is_live_now %}
+                                <span class="badge bg-danger">
+                                    <span class="spinner-grow spinner-grow-sm me-1" role="status"></span>
+                                    LIVE NOW
+                                </span>
+                            {% elif lesson.has_ended %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-check me-1"></i> Live Class (Ended)
+                                </span>
+                            {% else %}
+                                <span class="badge bg-info text-white">
+                                    <i class="fas fa-broadcast-tower me-1"></i> Live Class
+                                </span>
+                                <span class="badge bg-light text-dark">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    {{ lesson.live_start|date:"d M, H:i" }}
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-play-circle me-1"></i> Recorded
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="card-text text-muted small mb-3">
+                        {{ lesson.description|default:"No description"|truncatewords:20 }}
+                    </p>
+
+                    <!-- Meta badges -->
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% if lesson.lesson_type == 'recorded' %}
+                            {% if lesson.video_file or lesson.video_url %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-video me-1"></i> Video
+                                </span>
+                            {% endif %}
+                            {% if lesson.video_duration %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ lesson.video_duration|format_duration_filter }}
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ lesson.live_start|date:"H:i" }} – {{ lesson.live_end|date:"H:i" }}
+                            </span>
+                        {% endif %}
+
+                        {% if lesson.notes_file %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-file-alt me-1"></i> Notes
+                            </span>
+                        {% endif %}
+                        <span class="badge bg-primary">
+                            <i class="fas fa-percent me-1"></i>
+                            {{ lesson.required_watch_percentage }}%
+                        </span>
+                    </div>
+
+                    <!-- Release status -->
+                    <div class="mb-2">
+                        {% if lesson.is_released %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i> Released
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-lock me-1"></i> Draft
+                            </span>
+                        {% endif %}
+                        {% if lesson.release_date %}
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                {{ lesson.release_date|date:"d M Y" }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Student watch count -->
+                    <div class="text-muted small">
+                        <i class="fas fa-users me-1"></i>
+                        {{ lesson.progress.count }} student{{ lesson.progress.count|pluralize }} watched
+                    </div>
+                </div>
+
+                <!-- Card Footer -->
+                <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-1">
+                        <!-- Attendance -->
+                        <a href="{% url 'content:lesson_attendance' lesson.id %}"
+                           class="btn btn-sm btn-outline-info" title="Attendance">
+                            <i class="fas fa-chart-bar"></i>
+                        </a>
+
+                        <!-- Join live class (only for live lessons) -->
+                        {% if lesson.lesson_type == 'live' and not lesson.has_ended %}
+                            <a href="{% url 'content:live_class' lesson.id %}"
+                               class="btn btn-sm {% if lesson.is_live_now %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                               title="Open Live Room">
+                                <i class="fas fa-video me-1"></i> Open
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'content:update_lesson' lesson.id %}"
+                           class="btn btn-outline-warning" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'content:delete_lesson' lesson.id %}"
+                           class="btn btn-outline-danger" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    {% empty %}
+        <!-- Empty state -->
+        <div class="col-12">
+            <div class="alert alert-info text-center py-5">
+                <i class="fas fa-inbox fa-3x d-block mb-3 text-muted"></i>
+                <h4>No Lessons Yet</h4>
+                <p class="text-muted">Upload your first lesson for this batch.</p>
+                <a href="{% url 'content:create_lesson' batch.id %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus-circle me-1"></i> Upload Lesson
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

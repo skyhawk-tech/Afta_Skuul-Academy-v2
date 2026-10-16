@@ -1,0 +1,242 @@
+{% load static %}
+
+<div class="batch-tile">
+
+    <!-- ==================== CARD HEADER ==================== -->
+    <div class="batch-tile-header">
+        <div class="batch-tile-icon">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div class="batch-tile-header-text">
+            <h5 class="batch-tile-title" title="{{ item.batch.name }}">
+                {{ item.batch.name }}
+            </h5>
+            <div class="batch-tile-subtitle">
+                <span class="badge-grade">{{ item.batch.grade_level }}</span>
+                <span class="dot-divider">•</span>
+                <span>{{ item.batch.subject }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CARD BODY ==================== -->
+    <div class="batch-tile-body">
+
+        <!-- Teacher -->
+        <div class="batch-meta-row">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span>{{ item.batch.teacher.get_full_name|default:item.batch.teacher.username }}</span>
+        </div>
+
+        <!-- Schedule -->
+        <div class="batch-meta-row">
+            <i class="fas fa-calendar-alt"></i>
+            <span>{{ item.batch.schedule|default:"No schedule set" }}</span>
+        </div>
+
+        <!-- Progress block -->
+        <div class="batch-progress-block">
+            <div class="batch-progress-header">
+                <span class="batch-progress-label">Progress</span>
+                <span class="batch-progress-value
+                    {% if item.progress >= 80 %}text-success
+                    {% elif item.progress >= 50 %}text-warning
+                    {% else %}text-danger{% endif %}">
+                    {{ item.progress }}%
+                </span>
+            </div>
+
+            <div class="progress batch-progress-bar">
+                <div class="progress-bar
+                    {% if item.progress >= 80 %}bg-success
+                    {% elif item.progress >= 50 %}bg-warning
+                    {% else %}bg-danger{% endif %}"
+                    role="progressbar"
+                    style="width: {{ item.progress }}%;"
+                    aria-valuenow="{{ item.progress }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100">
+                </div>
+            </div>
+
+            <div class="batch-progress-meta">
+                <span>
+                    <i class="fas fa-check-circle text-success me-1"></i>
+                    {{ item.completed_lessons }} / {{ item.total_lessons }} lessons
+                </span>
+
+                {% if item.progress >= 80 %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                        On Track
+                    </span>
+                {% elif item.progress >= 50 %}
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                        Halfway
+                    </span>
+                {% elif item.progress > 0 %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                        Behind
+                    </span>
+                {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                        Not Started
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== CARD FOOTER ==================== -->
+    <div class="batch-tile-footer">
+        <a href="{% url 'batches:student_batch_detail' item.batch.id %}"
+           class="btn btn-primary w-100">
+            <i class="fas fa-arrow-right me-1"></i> Open Batch
+        </a>
+    </div>
+
+</div>
+
+<!-- ==================== STYLES ==================== -->
+<style>
+    /* ---------- Batch tile container ---------- */
+    .batch-tile {
+        background: #fff;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        border: 1px solid #f1f5f9;
+        transition: transform .2s, box-shadow .2s, border-color .2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .batch-tile:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+        border-color: #e2e8f0;
+    }
+
+    /* ---------- Header ---------- */
+    .batch-tile-header {
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+        color: #fff;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+    .batch-tile-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        backdrop-filter: blur(6px);
+    }
+    .batch-tile-header-text {
+        overflow: hidden;
+        flex-grow: 1;
+        min-width: 0;
+    }
+    .batch-tile-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .batch-tile-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.75rem;
+        opacity: 0.92;
+    }
+    .badge-grade {
+        background: rgba(255, 255, 255, 0.25);
+        color: #fff;
+        padding: 0.15rem 0.5rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.68rem;
+        letter-spacing: 0.02em;
+    }
+    .dot-divider { opacity: 0.6; }
+
+    /* ---------- Body ---------- */
+    .batch-tile-body {
+        padding: 1.1rem 1.25rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .batch-meta-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.82rem;
+        color: #475569;
+    }
+    .batch-meta-row i {
+        color: #94a3b8;
+        width: 16px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    /* ---------- Progress ---------- */
+    .batch-progress-block {
+        margin-top: 0.75rem;
+        padding-top: 0.85rem;
+        border-top: 1px dashed #e2e8f0;
+    }
+    .batch-progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    .batch-progress-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        font-weight: 600;
+    }
+    .batch-progress-value {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    .batch-progress-bar {
+        height: 8px;
+        border-radius: 4px;
+        background-color: #f1f5f9;
+        margin-bottom: 0.5rem;
+    }
+    .batch-progress-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    /* ---------- Footer ---------- */
+    .batch-tile-footer {
+        padding: 0 1.25rem 1.25rem;
+    }
+    .batch-tile-footer .btn {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+    }
+</style>

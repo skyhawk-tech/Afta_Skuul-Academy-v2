@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% load common_filters %}
+
+{% block title %}{{ assignment.title }}{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'batches:student_batch_list' %}">My Learning</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'batches:student_batch_detail' assignment.batch.id %}">{{ assignment.batch.name }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'assignments:student_batch_assignments' assignment.batch.id %}">Assignments</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ assignment.title }}</li>
+    </ol>
+</nav>
+
+<!-- Assignment Header -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <h2>
+            <i class="fas fa-{% if assignment.type == 'exam' %}clipboard-list{% else %}pencil-alt{% endif %} text-primary me-2"></i>
+            {{ assignment.title }}
+        </h2>
+        <p class="text-muted mb-2">{{ assignment.description|linebreaks }}</p>
+        <p class="text-muted small">
+            <i class="fas fa-chalkboard-teacher me-1"></i> {{ assignment.batch.name }} – {{ assignment.batch.subject }}
+        </p>
+    </div>
+    <div class="col-lg-4">
+        <div class="card bg-light border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Type</span>
+                    <span class="badge bg-secondary">{{ assignment.get_type_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span class="text-muted">Total Marks</span>
+                    <span class="fw-bold">{{ assignment.total_marks }}</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span class="text-muted">Due Date</span>
+                    <span class="{% if assignment.is_overdue %}text-danger{% else %}text-success{% endif %}">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        {{ assignment.due_date|date:"d M Y, H:i" }}
+                    </span>
+                </div>
+                {% if assignment.is_overdue %}
+                    <div class="text-danger mt-2">
+                        <i class="fas fa-exclamation-circle me-1"></i> Overdue
+                    </div>
+                {% endif %}
+                {% if assignment.time_limit_minutes %}
+                    <div class="d-flex justify-content-between mt-2">
+                        <span class="text-muted">Time Limit</span>
+                        <span>{{ assignment.time_limit_minutes }} minutes</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Questions -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>Questions</h5>
+    </div>
+    <div class="card-body">
+        {% for q in questions %}
+            <div class="question-item p-3 mb-3 bg-light rounded-3 border-start border-4 
+                        {% if q.type == 'mcq' %}border-primary
+                        {% elif q.type == 'short' %}border-success
+                        {% else %}border-warning{% endif %}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <strong class="text-dark">Q{{ forloop.counter }}.</strong>
+                            <span class="badge 
+                                {% if q.type == 'mcq' %}bg-primary
+                                {% elif q.type == 'short' %}bg-success
+                                {% else %}bg-warning text-dark{% endif %}">
+                                {{ q.type|upper }}
+                            </span>
+                            {% if submission and submission.marks_obtained is not None %}
+                                <span class="badge bg-info ms-auto">
+                                    {{ q.student_answer|default:"Not answered" }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <p class="mb-2">{{ q.question }}</p>
+
+                        <!-- MCQ Options -->
+                        {% if q.type == 'mcq' and q.options %}
+                            <div class="ms-4">
+                                {% for opt in q.options %}
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input" type="radio" 
+                                               name="q_{{ q.id }}" value="{{ opt }}" 
+                                               disabled
+                                               {% if submission and q.student_answer == opt %}checked{% endif %}>
+                                        <label class="form-check-label">{{ opt }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Short Answer -->
+                        {% if q.type == 'short' %}
+                            <div class="ms-4">
+                                <textarea class="form-control" rows="3" disabled 
+                                          placeholder="Your answer...">{{ q.student_answer|default:"" }}</textarea>
+                            </div>
+                        {% endif %}
+
+                        <!-- File Upload -->
+                        {% if q.type == 'file' %}
+                            <div class="ms-4">
+                                {% if submission and submission.file_upload %}
+                                    <a href="{{ submission.file_upload.url }}" target="_blank" class="btn btn-sm btn-info">
+                                        <i class="fas fa-file-download me-1"></i> Download Attachment
+                                    </a>
+                                    <span class="text-muted small ms-2">
+                                        ({{ submission.file_upload|file_size }})
+                                    </span>
+                                {% else %}
+                                    <p class="text-muted small">No file uploaded</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-muted text-center py-3">No questions defined.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Submission Status -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header {% if submission and submission.marks_obtained is not None %}bg-success text-white{% elif submission %}bg-warning text-dark{% else %}bg-secondary text-white{% endif %}">
+        <h5 class="mb-0">
+            <i class="fas fa-{% if submission and submission.marks_obtained is not None %}check-circle{% elif submission %}clock{% else %}hourglass-start{% endif %} me-2"></i>
+            Your Submission
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if submission %}
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Submitted:</strong> {{ submission.submitted_at|date:"d M Y, H:i" }}</p>
+                    {% if submission.marks_obtained is not None %}
+                        <p><strong>Marks Obtained:</strong> {{ submission.marks_obtained }} / {{ assignment.total_marks }}</p>
+                        <p><strong>Feedback:</strong> {{ submission.feedback|default:"No feedback yet." }}</p>
+                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Graded</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Awaiting Grading</span>
+                        {% if assignment.is_overdue %}
+                            <span class="badge bg-danger ms-2"><i class="fas fa-exclamation-circle me-1"></i> Late Submission</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="col-md-6 text-md-end">
+                    {% if submission.file_upload %}
+                        <a href="{{ submission.file_upload.url }}" target="_blank" class="btn btn-outline-info">
+                            <i class="fas fa-file-download me-1"></i> Download Submission
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-3">
+                <i class="fas fa-inbox fa-3x text-muted d-block mb-3"></i>
+                <p class="text-muted">You haven't submitted this assignment yet.</p>
+                {% if not assignment.is_overdue %}
+                    <a href="{% url 'assignments:assignment_submit' assignment.id %}" class="btn btn-primary">
+                        <i class="fas fa-upload me-1"></i> Submit Assignment
+                    </a>
+                {% else %}
+                    <div class="alert alert-danger d-inline-block">
+                        <i class="fas fa-exclamation-circle me-2"></i> This assignment is overdue.
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'assignments:student_batch_assignments' assignment.batch.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Assignments
+    </a>
+    {% if not submission and not assignment.is_overdue %}
+        <a href="{% url 'assignments:assignment_submit' assignment.id %}" class="btn btn-primary ms-auto">
+            <i class="fas fa-upload me-1"></i> Submit Assignment
+        </a>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,115 @@
+{% load static %}
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-chart-bar me-2"></i>
+            {{ chart_title|default:"Attendance This Week" }}
+        </h5>
+        <span class="badge bg-light text-dark">Last 7 Days</span>
+    </div>
+    <div class="card-body">
+        <div style="position: relative; height: 320px;">
+            <canvas id="attendanceChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Safely serialize chart_data to JSON -->
+{{ chart_data|json_script:"attendance-chart-data" }}
+
+<!-- Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('attendanceChart');
+    if (!canvas) {
+        console.error('❌ Attendance chart canvas not found');
+        return;
+    }
+
+    const dataEl = document.getElementById('attendance-chart-data');
+    if (!dataEl) {
+        console.error('❌ Chart data not found');
+        return;
+    }
+
+    let chartData;
+    try {
+        chartData = JSON.parse(dataEl.textContent);
+    } catch (e) {
+        console.error('❌ Invalid chart JSON:', e);
+        return;
+    }
+
+    // Fallback defaults if the view passed empty data
+    const hasData = chartData && chartData.datasets && chartData.datasets.length > 0;
+    const finalData = hasData ? chartData : {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [
+            {
+                label: 'Attended',
+                data: [0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 1,
+            },
+            {
+                label: 'Total Enrolled',
+                data: [0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: 'rgba(255, 193, 7, 0.3)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1,
+                borderDash: [5, 5],
+                fill: false,
+            }
+        ]
+    };
+
+    console.log('📊 Attendance chart data:', finalData);
+
+    new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: finalData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, boxWidth: 8 }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 },
+                    title: {
+                        display: true,
+                        text: 'Number of Students'
+                    },
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Day'
+                    },
+                    grid: { display: false }
+                }
+            },
+            animation: {
+                duration: 600,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+
+    console.log('✅ Attendance chart rendered');
+});
+</script>

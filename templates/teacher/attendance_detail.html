@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - {{ lesson.title }}{% endblock %}
+
+{% block content %}
+
+<!-- ==================== HEADER ==================== -->
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'analytics:teacher_analytics' %}">Dashboard</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'content:batch_lessons' lesson.batch.id %}">{{ lesson.batch.name }}</a>
+                </li>
+                <li class="breadcrumb-item active">Attendance</li>
+            </ol>
+        </nav>
+        <h2>
+            <i class="fas fa-chart-bar text-success me-2"></i>Attendance
+            {% if lesson.lesson_type == 'live' %}
+                <span class="badge bg-danger ms-2">
+                    <i class="fas fa-broadcast-tower me-1"></i> Live Class
+                </span>
+            {% else %}
+                <span class="badge bg-primary ms-2">
+                    <i class="fas fa-play-circle me-1"></i> Recorded
+                </span>
+            {% endif %}
+        </h2>
+        <p class="text-muted mb-0">{{ lesson.title }} – {{ lesson.batch.name }}</p>
+
+        {% if lesson.lesson_type == 'live' and lesson.live_start %}
+            <p class="text-muted small mb-0">
+                <i class="far fa-calendar-alt me-1"></i>
+                {{ lesson.live_start|date:"d M Y, H:i" }}
+                <span class="mx-2">→</span>
+                {{ lesson.live_end|date:"H:i" }}
+                <span class="mx-3">·</span>
+                <i class="far fa-clock me-1"></i>
+                {{ lesson.scheduled_minutes }} min scheduled
+            </p>
+        {% endif %}
+    </div>
+    <div>
+        <a href="{% url 'content:batch_lessons' lesson.batch.id %}"
+           class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Lessons
+        </a>
+    </div>
+</div>
+
+<!-- ==================== SUMMARY CARDS ==================== -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary h-100 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title text-uppercase small mb-0 opacity-75">Total Enrolled</h6>
+                    <p class="display-6 mb-0">{{ total_enrolled }}</p>
+                </div>
+                <i class="fas fa-users fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-white {% if attended_count > 0 %}bg-success{% else %}bg-secondary{% endif %} h-100 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title text-uppercase small mb-0 opacity-75">
+                        {% if lesson.lesson_type == 'live' %}Attended{% else %}Completed{% endif %}
+                    </h6>
+                    <p class="display-6 mb-0">{{ attended_count }}</p>
+                </div>
+                <i class="fas fa-check-circle fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-white bg-info h-100 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title text-uppercase small mb-0 opacity-75">Attendance Rate</h6>
+                    <p class="display-6 mb-0">
+                        {% if total_enrolled > 0 %}
+                            {% widthratio attended_count total_enrolled 100 %}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </p>
+                </div>
+                <i class="fas fa-percentage fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== STUDENT PROGRESS TABLE ==================== -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Student Progress</h5>
+        <span class="badge bg-light text-dark">
+            {{ attendance_data|length }} student{{ attendance_data|length|pluralize }}
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Student</th>
+                        <th class="text-center">
+                            {% if lesson.lesson_type == 'live' %}Attended{% else %}Watched{% endif %}
+                        </th>
+                        <th style="min-width: 180px;">
+                            {% if lesson.lesson_type == 'live' %}Attendance %{% else %}Watch %{% endif %}
+                        </th>
+                        <th class="text-center">Duration</th>
+                        <th class="text-end">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in attendance_data %}
+                        <tr>
+                            <td class="text-muted">{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ data.student.get_full_name|default:data.student.username }}</strong>
+                                <br>
+                                <small class="text-muted">{{ data.student.username }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if data.attended %}
+                                    <i class="fas fa-check-circle text-success fa-lg"></i>
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger fa-lg"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 20px;">
+                                        <div class="progress-bar
+                                            {% if data.percentage >= lesson.required_watch_percentage %}bg-success
+                                            {% elif data.percentage > 0 %}bg-warning
+                                            {% else %}bg-secondary{% endif %}"
+                                            role="progressbar"
+                                            style="width: {{ data.percentage|floatformat:0 }}%;"
+                                            aria-valuenow="{{ data.percentage|floatformat:0 }}"
+                                            aria-valuemin="0"
+                                            aria-valuemax="100">
+                                            {{ data.percentage|floatformat:0 }}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border">
+                                    {{ data.duration_minutes|floatformat:1 }} min
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                {% if data.attended %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        {% if lesson.lesson_type == 'live' %}Attended{% else %}Completed{% endif %}
+                                    </span>
+                                {% elif data.percentage > 0 %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-hourglass-start me-1"></i> In Progress
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-minus-circle me-1"></i> Not Started
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="fas fa-users-slash fa-3x d-block text-muted mb-3"></i>
+                                <p class="text-muted mb-0">No students enrolled in this batch.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== LEGEND ==================== -->
+<div class="mt-3 small text-muted">
+    <i class="fas fa-info-circle me-1"></i>
+    {% if lesson.lesson_type == 'live' %}
+        <strong>Attendance %</strong> = minutes attended ÷ scheduled class duration × 100.
+        A student is marked as <strong>attended</strong> after
+        {{ lesson.live_min_attendance_seconds|default:600|floatformat:0 }} seconds (≈
+        {% widthratio lesson.live_min_attendance_seconds|default:600 60 1 %} min) in the room.
+    {% else %}
+        <strong>Watch %</strong> = watched seconds ÷ video duration × 100.
+        A student is marked as <strong>completed</strong> after reaching
+        {{ lesson.required_watch_percentage }}% of the video.
+    {% endif %}
+</div>
+
+{% endblock %}

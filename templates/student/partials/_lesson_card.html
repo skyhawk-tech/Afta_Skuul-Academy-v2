@@ -1,0 +1,305 @@
+{% load common_filters %}
+
+<div class="lesson-tile">
+
+    <!-- Header row: order + status -->
+    <div class="lesson-tile-header">
+        <span class="lesson-order">#{{ lesson.order }}</span>
+
+        {% if lesson.lesson_type == 'live' %}
+            {% if lesson.is_live_now %}
+                <span class="badge bg-danger">
+                    <span class="spinner-grow spinner-grow-sm me-1" role="status"></span>
+                    LIVE
+                </span>
+            {% elif lesson.has_ended %}
+                <span class="badge bg-secondary">
+                    <i class="fas fa-check me-1"></i>Ended
+                </span>
+            {% else %}
+                <span class="badge bg-info">
+                    <i class="fas fa-clock me-1"></i>Scheduled
+                </span>
+            {% endif %}
+        {% else %}
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                <i class="fas fa-play-circle me-1"></i>Recorded
+            </span>
+        {% endif %}
+    </div>
+
+    <!-- Progress ring or duration visual -->
+    <div class="lesson-tile-visual">
+        {% if lesson.lesson_type == 'recorded' and progress %}
+            <div class="progress-ring"
+                 style="--pct: {{ progress.watch_percentage|floatformat:0 }};"
+                 data-completed="{% if progress.is_completed %}1{% else %}0{% endif %}">
+                <span class="progress-ring-text">{{ progress.watch_percentage|floatformat:0 }}%</span>
+            </div>
+        {% elif lesson.lesson_type == 'live' %}
+            <div class="live-visual">
+                <i class="fas fa-broadcast-tower"></i>
+                <span>{{ lesson.scheduled_minutes }} min</span>
+            </div>
+        {% else %}
+            <div class="progress-ring progress-ring-empty" style="--pct: 0;">
+                <span class="progress-ring-text">
+                    <i class="fas fa-play" style="font-size: 1rem; color: #94a3b8;"></i>
+                </span>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Title & description -->
+    <h6 class="lesson-tile-title">{{ lesson.title }}</h6>
+
+    <p class="lesson-tile-desc">
+        {{ lesson.description|default:"No description"|truncatewords:12 }}
+    </p>
+
+    <!-- Meta info -->
+    <div class="lesson-tile-meta">
+        {% if lesson.lesson_type == 'recorded' %}
+            <span>
+                <i class="far fa-clock me-1"></i>
+                {{ lesson.video_duration|format_duration_filter }}
+            </span>
+        {% else %}
+            <span>
+                <i class="far fa-calendar-alt me-1"></i>
+                {{ lesson.live_start|date:"d M, H:i" }}
+            </span>
+        {% endif %}
+
+        {% if lesson.notes_file %}
+            <span class="meta-notes" title="Notes available">
+                <i class="fas fa-file-alt"></i>
+            </span>
+        {% endif %}
+
+        {% if not lesson.is_released %}
+            <span class="meta-locked" title="Locked">
+                <i class="fas fa-lock"></i>
+            </span>
+        {% endif %}
+    </div>
+
+    <!-- Status pill -->
+    <div class="lesson-tile-status">
+        {% if lesson.lesson_type == 'recorded' %}
+            {% if progress %}
+                {% if progress.is_completed %}
+                    <span class="status-pill status-success">
+                        <i class="fas fa-check-circle me-1"></i> Completed
+                    </span>
+                {% else %}
+                    <span class="status-pill status-warning">
+                        <i class="fas fa-hourglass-half me-1"></i> In Progress
+                    </span>
+                {% endif %}
+            {% else %}
+                <span class="status-pill status-neutral">
+                    <i class="fas fa-circle me-1"></i> Not Started
+                </span>
+            {% endif %}
+        {% else %}
+            {% if lesson.has_ended %}
+                <span class="status-pill status-neutral">
+                    <i class="fas fa-minus-circle me-1"></i> Ended
+                </span>
+            {% elif lesson.is_live_now %}
+                <span class="status-pill status-danger">
+                    <i class="fas fa-signal me-1"></i> Live Now
+                </span>
+            {% else %}
+                <span class="status-pill status-info">
+                    <i class="fas fa-clock me-1"></i> Upcoming
+                </span>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Action button -->
+    <div class="lesson-tile-action">
+        {% if lesson.lesson_type == 'live' %}
+            {% if lesson.has_ended or not lesson.is_released %}
+                <button class="btn btn-secondary w-100" disabled>
+                    <i class="fas fa-video-slash me-1"></i> Unavailable
+                </button>
+            {% else %}
+                <a href="{% url 'content:live_class' lesson.id %}"
+                   class="btn w-100 {% if lesson.is_live_now %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                    <i class="fas fa-video me-1"></i>
+                    {% if lesson.is_live_now %}Join Now{% else %}Join Class{% endif %}
+                </a>
+            {% endif %}
+        {% else %}
+            {% if not lesson.is_released %}
+                <button class="btn btn-secondary w-100" disabled>
+                    <i class="fas fa-lock me-1"></i> Locked
+                </button>
+            {% else %}
+                <a href="{% url 'content:lesson_detail' lesson.id %}"
+                   class="btn btn-primary w-100">
+                    <i class="fas fa-play me-1"></i>
+                    {% if progress.is_completed %}Rewatch{% elif progress %}Continue{% else %}Watch Now{% endif %}
+                </a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+</div>
+
+<style>
+    /* ---------- Lesson tile ---------- */
+    .lesson-tile {
+        background: #fff;
+        border-radius: 14px;
+        padding: 1.25rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        border: 1px solid #f1f5f9;
+        transition: transform .2s, box-shadow .2s, border-color .2s;
+        position: relative;
+    }
+    .lesson-tile:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+        border-color: #e2e8f0;
+    }
+
+    .lesson-tile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .lesson-order {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 0.2rem 0.55rem;
+        border-radius: 6px;
+        letter-spacing: 0.03em;
+    }
+
+    /* ---------- Progress ring ---------- */
+    .lesson-tile-visual {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    .progress-ring {
+        --pct: 0;
+        --ring-color: #4f46e5;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background:
+            conic-gradient(
+                var(--ring-color) calc(var(--pct) * 1%),
+                #e2e8f0 0
+            );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .progress-ring[data-completed="1"] { --ring-color: #10b981; }
+    .progress-ring::before {
+        content: '';
+        position: absolute;
+        inset: 6px;
+        background: #fff;
+        border-radius: 50%;
+    }
+    .progress-ring-text {
+        position: relative;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #0f172a;
+    }
+    .progress-ring-empty {
+        background: #f1f5f9;
+    }
+
+    /* Live visual */
+    .live-visual {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        color: #dc2626;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.7rem;
+    }
+    .live-visual i {
+        font-size: 1.25rem;
+        margin-bottom: 0.15rem;
+    }
+
+    /* ---------- Title & description ---------- */
+    .lesson-tile-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.4rem;
+        line-height: 1.3;
+    }
+    .lesson-tile-desc {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-bottom: 0.75rem;
+        flex-grow: 1;
+    }
+
+    /* ---------- Meta ---------- */
+    .lesson-tile-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+    .meta-notes { color: #f59e0b; }
+    .meta-locked { color: #ef4444; }
+
+    /* ---------- Status pill ---------- */
+    .lesson-tile-status {
+        margin-bottom: 0.75rem;
+    }
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        letter-spacing: 0.02em;
+    }
+    .status-success { background: #ecfdf5; color: #047857; }
+    .status-warning { background: #fffbeb; color: #b45309; }
+    .status-danger  { background: #fef2f2; color: #b91c1c; }
+    .status-info    { background: #eff6ff; color: #1d4ed8; }
+    .status-neutral { background: #f1f5f9; color: #475569; }
+
+    /* ---------- Action ---------- */
+    .lesson-tile-action {
+        margin-top: auto;
+    }
+    .lesson-tile-action .btn {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+    }
+</style>

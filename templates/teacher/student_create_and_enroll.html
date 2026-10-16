@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Create & Enroll Student{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create & Enroll Student</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Create a new student account and enroll them into <strong>{{ batch.name }}</strong>.
+                </p>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'batches:enroll_student' batch.id %}" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-user-plus me-1"></i> Create & Enroll
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
